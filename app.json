@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Zenflo",
+    "slug": "zenflo",
+    "scheme": "zenflo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": { "backgroundColor": "#0F0E17" },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.zenflo.app",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Zenflo needs calendar access to create time blocks for your tasks and events."
+      }
+    },
+    "android": {
+      "adaptiveIcon": { "backgroundColor": "#0F0E17" },
+      "package": "com.zenflo.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      ["expo-notifications", { "color": "#6C63FF" }],
+      ["expo-calendar"]
+    ]
+  }
+}
