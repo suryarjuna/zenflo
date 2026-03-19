@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { useAppStore } from '@/store/useAppStore';
 import { useXP } from '@/hooks/useXP';
@@ -13,8 +14,9 @@ import { getDatabase } from '@/db/database';
 import { getXPEvents } from '@/db/xp';
 import { getSessionCount, getTotalFocusMinutes } from '@/db/sessions';
 import { getAllFlightLogs } from '@/db/flight-logs';
+import { getAllCategories } from '@/db/categories';
 import { getLevelTier, xpForLevel } from '@/constants/levels';
-import type { XPEvent } from '@/types';
+import type { XPEvent, Category } from '@/types';
 
 interface WeeklyXP {
   label: string;
@@ -29,6 +31,7 @@ interface HabitStat {
 }
 
 export default function AnalyticsScreen() {
+  const Colors = useColors();
   const stats = useAppStore((s) => s.stats);
   const { totalXP, level, progress } = useXP();
   const { habits } = useHabits();
@@ -44,6 +47,7 @@ export default function AnalyticsScreen() {
   const [flightLogCount, setFlightLogCount] = useState(0);
   const [habitStats, setHabitStats] = useState<HabitStat[]>([]);
   const [avgDailyXP, setAvgDailyXP] = useState(0);
+  const [categoryTime, setCategoryTime] = useState<{ name: string; color: string; minutes: number }[]>([]);
 
   const tier = getLevelTier(level);
   const nextLevel = level + 1;
@@ -123,6 +127,30 @@ export default function AnalyticsScreen() {
     }
     setHabitStats(habitData);
 
+    // Time spent by category (from focus sessions linked to categorized tasks)
+    const catTimeRows = await db.getAllAsync<{ name: string; color: string; total_minutes: number }>(
+      `SELECT c.name, c.color, COALESCE(SUM(fs.duration_minutes), 0) as total_minutes
+       FROM focus_sessions fs
+       JOIN tasks t ON fs.task_id = t.id
+       JOIN categories c ON t.category_id = c.id
+       WHERE fs.completed_at IS NOT NULL
+       GROUP BY c.id
+       ORDER BY total_minutes DESC`
+    );
+    // Also count uncategorized focus time
+    const uncatRow = await db.getFirstAsync<{ total_minutes: number }>(
+      `SELECT COALESCE(SUM(fs.duration_minutes), 0) as total_minutes
+       FROM focus_sessions fs
+       LEFT JOIN tasks t ON fs.task_id = t.id
+       WHERE fs.completed_at IS NOT NULL AND (t.category_id IS NULL OR fs.task_id IS NULL)`
+    );
+    const catData = catTimeRows.map(r => ({ name: r.name, color: r.color, minutes: r.total_minutes }));
+    const uncatMinutes = uncatRow?.total_minutes ?? 0;
+    if (uncatMinutes > 0) {
+      catData.push({ name: 'Uncategorized', color: Colors.text.tertiary, minutes: uncatMinutes });
+    }
+    setCategoryTime(catData);
+
     // Average daily XP (last 30 days)
     const avgRow = await db.getFirstAsync<{ total: number }>(
       `SELECT COALESCE(SUM(amount), 0) as total FROM xp_events WHERE date(created_at) >= date('now', '-30 days')`
@@ -146,6 +174,9 @@ export default function AnalyticsScreen() {
   };
 
   const totalSourceXP = Object.values(xpBySource).reduce((a, b) => a + b, 0) || 1;
+
+  const styles = createStyles(Colors);
+  const mStyles = createMilestoneStyles(Colors);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -251,6 +282,39 @@ export default function AnalyticsScreen() {
           </Card>
         </View>
 
+        {/* Time by category */}
+        {categoryTime.length > 0 && (() => {
+          const totalCatMinutes = categoryTime.reduce((a, b) => a + b.minutes, 0) || 1;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Time by Category</Text>
+              <Card style={{ gap: Spacing.md }}>
+                {categoryTime.map((cat, i) => {
+                  const pct = Math.round((cat.minutes / totalCatMinutes) * 100);
+                  const hrs = Math.floor(cat.minutes / 60);
+                  const mins = cat.minutes % 60;
+                  return (
+                    <View key={i} style={styles.sourceRow}>
+                      <View style={styles.sourceLeft}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: cat.color }} />
+                        <Text style={styles.sourceLabel}>{cat.name}</Text>
+                      </View>
+                      <View style={styles.sourceBarContainer}>
+                        <View style={styles.sourceBarTrack}>
+                          <View style={[styles.sourceBarFill, { width: `${pct}%`, backgroundColor: cat.color }]} />
+                        </View>
+                      </View>
+                      <Text style={[styles.sourceAmount, { color: cat.color }]}>
+                        {hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </Card>
+            </View>
+          );
+        })()}
+
         {/* Habit performance */}
         {habitStats.length > 0 && (
           <View style={styles.section}>
@@ -336,6 +400,8 @@ function MilestoneRow({ icon, color, label, value }: {
   label: string;
   value: string;
 }) {
+  const Colors = useColors();
+  const milestoneStyles = createMilestoneStyles(Colors);
   return (
     <View style={milestoneStyles.row}>
       <View style={[milestoneStyles.iconCircle, { backgroundColor: color + '20' }]}>
@@ -349,7 +415,7 @@ function MilestoneRow({ icon, color, label, value }: {
   );
 }
 
-const milestoneStyles = StyleSheet.create({
+const createMilestoneStyles = (Colors: ThemeColors) => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   iconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
@@ -357,7 +423,7 @@ const milestoneStyles = StyleSheet.create({
   value: { fontSize: Typography.md, fontWeight: Typography.semibold },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

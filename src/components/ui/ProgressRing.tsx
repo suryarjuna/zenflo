@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, { useAnimatedProps, withTiming, useSharedValue } from 'react-native-reanimated';
-import { Colors } from '../../constants/theme';
+import { useColors } from '../../constants/theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -14,7 +14,9 @@ interface ProgressRingProps {
   children?: React.ReactNode;
 }
 
-export function ProgressRing({ size, progress, color = Colors.accent, strokeWidth = 8, children }: ProgressRingProps) {
+export function ProgressRing({ size, progress, color, strokeWidth = 8, children }: ProgressRingProps) {
+  const Colors = useColors();
+  const resolvedColor = color ?? Colors.accent;
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -42,7 +44,7 @@ export function ProgressRing({ size, progress, color = Colors.accent, strokeWidt
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={resolvedColor}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { getTasksForToday, getAllPendingTasks, createTask, completeTask, updateTask, deleteTask } from '../db/tasks';
 import { getUserStats } from '../db/xp';
+import { syncWidgetData } from '../utils/widgetSync';
 import type { Task, TaskPriority } from '../types';
 
 export function useTasks() {
@@ -14,6 +15,7 @@ export function useTasks() {
   const refresh = useCallback(async () => {
     const tasks = await getTasksForToday();
     setTodayTasks(tasks);
+    syncWidgetData();
   }, [setTodayTasks]);
 
   const add = useCallback(async (data: {
@@ -28,6 +30,7 @@ export function useTasks() {
     calendarEventId?: string;
     isEvent?: boolean;
     eventType?: string;
+    categoryId?: string;
   }) => {
     const task = await createTask(data);
     await refresh();

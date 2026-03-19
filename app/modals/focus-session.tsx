@@ -1,25 +1,32 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { startSession, completeSession } from '@/db/sessions';
 import { getUserStats } from '@/db/xp';
 import { useAppStore } from '@/store/useAppStore';
 
-const DURATION_OPTIONS = [25, 50, 90];
+const DURATION_PRESETS = [
+  { label: '20', minutes: 20 },
+  { label: '30', minutes: 30 },
+  { label: '60', minutes: 60 },
+];
 
 export default function FocusSessionModal() {
+  const Colors = useColors();
   const { taskId, taskTitle } = useLocalSearchParams<{ taskId?: string; taskTitle?: string }>();
   const [state, setState] = useState<'pre' | 'running' | 'paused' | 'completed'>('pre');
-  const [selectedDuration, setSelectedDuration] = useState(25);
-  const [customDuration, setCustomDuration] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(30);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customInput, setCustomInput] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const startTimestamp = useRef(0);
@@ -49,6 +56,19 @@ export default function FocusSessionModal() {
     }
   };
 
+  const selectPreset = (mins: number) => {
+    setSelectedDuration(mins);
+    setShowCustom(false);
+    setCustomInput('');
+  };
+
+  const confirmCustom = () => {
+    const mins = parseInt(customInput, 10);
+    if (mins > 0 && mins <= 480) {
+      setSelectedDuration(mins);
+    }
+  };
+
   const startTimer = useCallback(async () => {
     const duration = selectedDuration;
     const totalSec = duration * 60;
@@ -67,7 +87,6 @@ export default function FocusSessionModal() {
       const remaining = Math.max(totalSec - elapsed, 0);
       setSecondsLeft(remaining);
 
-      // Haptic pulse every 5 minutes
       const elapsedMinutes = Math.floor(elapsed / 60);
       if (elapsedMinutes > 0 && elapsedMinutes % 5 === 0 && elapsedMinutes !== lastHapticMinute.current) {
         lastHapticMinute.current = elapsedMinutes;
@@ -147,6 +166,10 @@ export default function FocusSessionModal() {
     };
   }, []);
 
+  const isCustomSelected = !DURATION_PRESETS.some(p => p.minutes === selectedDuration) || showCustom;
+
+  const styles = createStyles(Colors);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -163,20 +186,68 @@ export default function FocusSessionModal() {
               {taskTitle && <Text style={styles.taskLabel}>{taskTitle}</Text>}
 
               <View style={styles.durationRow}>
-                {DURATION_OPTIONS.map(d => (
+                {DURATION_PRESETS.map(d => (
                   <TouchableOpacity
-                    key={d}
-                    style={[styles.durationPill, selectedDuration === d && styles.durationPillActive]}
-                    onPress={() => setSelectedDuration(d)}
+                    key={d.minutes}
+                    style={[styles.durationPill, selectedDuration === d.minutes && !showCustom && styles.durationPillActive]}
+                    onPress={() => selectPreset(d.minutes)}
                     accessibilityRole="radio"
-                    accessibilityLabel={`${d} minutes`}
-                    accessibilityState={{ selected: selectedDuration === d }}
+                    accessibilityLabel={`${d.minutes} minutes`}
+                    accessibilityState={{ selected: selectedDuration === d.minutes && !showCustom }}
                   >
-                    <Text style={[styles.durationText, selectedDuration === d && styles.durationTextActive]}>{d}</Text>
-                    <Text style={[styles.durationUnit, selectedDuration === d && styles.durationTextActive]}>min</Text>
+                    <Text style={[styles.durationText, selectedDuration === d.minutes && !showCustom && styles.durationTextActive]}>
+                      {d.label}
+                    </Text>
+                    <Text style={[styles.durationUnit, selectedDuration === d.minutes && !showCustom && styles.durationTextActive]}>
+                      min
+                    </Text>
                   </TouchableOpacity>
                 ))}
+                <TouchableOpacity
+                  style={[styles.durationPill, isCustomSelected && styles.durationPillActive]}
+                  onPress={() => setShowCustom(true)}
+                  accessibilityRole="radio"
+                  accessibilityLabel="Custom duration"
+                  accessibilityState={{ selected: isCustomSelected }}
+                >
+                  <Ionicons
+                    name="timer-outline"
+                    size={18}
+                    color={isCustomSelected ? Colors.text.inverse : Colors.text.secondary}
+                  />
+                  <Text style={[styles.durationUnit, isCustomSelected && styles.durationTextActive]}>
+                    Custom
+                  </Text>
+                </TouchableOpacity>
               </View>
+
+              {showCustom && (
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.customInput}
+                    value={customInput}
+                    onChangeText={setCustomInput}
+                    keyboardType="number-pad"
+                    placeholder="Minutes"
+                    placeholderTextColor={Colors.text.tertiary}
+                    maxLength={3}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={confirmCustom}
+                    accessibilityLabel="Custom minutes"
+                  />
+                  <TouchableOpacity
+                    style={[styles.customConfirm, !customInput && { opacity: 0.4 }]}
+                    onPress={confirmCustom}
+                    disabled={!customInput}
+                    accessibilityLabel="Confirm custom duration"
+                  >
+                    <Text style={styles.customConfirmText}>Set</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <Text style={styles.selectedLabel}>{selectedDuration} min session</Text>
             </View>
             <Button label="Begin session" onPress={startTimer} />
           </>
@@ -229,7 +300,7 @@ export default function FocusSessionModal() {
             <Text style={styles.completedHeading}>Session complete!</Text>
             <Animated.Text style={[styles.xpFloat, xpStyle]}>+15 XP</Animated.Text>
             <Button
-              label="Back to Monk Mode"
+              label="Done"
               onPress={() => router.back()}
               style={{ marginTop: Spacing['2xl'] }}
             />
@@ -240,23 +311,56 @@ export default function FocusSessionModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.monk.background },
   container: { flex: 1, padding: Spacing.xl, paddingBottom: Spacing['3xl'] },
   preTop: { alignItems: 'flex-end' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.lg },
   heading: { fontSize: Typography['2xl'], fontWeight: Typography.bold, color: Colors.text.primary },
   taskLabel: { fontSize: Typography.md, color: Colors.text.secondary },
-  durationRow: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.xl },
+  durationRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xl, flexWrap: 'wrap', justifyContent: 'center' },
   durationPill: {
-    paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
     borderRadius: Radius.full, backgroundColor: Colors.background.tertiary,
-    alignItems: 'center',
+    alignItems: 'center', flexDirection: 'row', gap: Spacing.xs,
   },
   durationPillActive: { backgroundColor: Colors.monk.primary },
   durationText: { fontSize: Typography.xl, fontWeight: Typography.bold, color: Colors.text.secondary },
   durationUnit: { fontSize: Typography.xs, color: Colors.text.tertiary },
   durationTextActive: { color: Colors.text.inverse },
+  selectedLabel: {
+    fontSize: Typography.sm,
+    color: Colors.text.tertiary,
+    marginTop: Spacing.sm,
+  },
+  customRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  customInput: {
+    backgroundColor: Colors.background.tertiary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    fontSize: Typography.lg,
+    fontWeight: Typography.bold,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    minWidth: 100,
+  },
+  customConfirm: {
+    backgroundColor: Colors.monk.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  customConfirmText: {
+    fontSize: Typography.base,
+    fontWeight: Typography.semibold,
+    color: Colors.text.inverse,
+  },
   timerLarge: { fontSize: 56, fontWeight: Typography.bold, color: Colors.text.primary },
   runningTask: { fontSize: Typography.sm, color: Colors.text.secondary, textAlign: 'center', marginTop: Spacing.lg },
   controls: { flexDirection: 'row', justifyContent: 'center', gap: Spacing['2xl'] },

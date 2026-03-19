@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 import { useTasks } from '@/hooks/useTasks';
 import { useHabits } from '@/hooks/useHabits';
@@ -14,6 +14,7 @@ import { useXP } from '@/hooks/useXP';
 import { useStreaks } from '@/hooks/useStreaks';
 import { useFlightLog } from '@/hooks/useFlightLog';
 import { getSessionsForDate } from '@/db/sessions';
+import { getUserStats, setUserName } from '@/db/xp';
 import { getGreeting, getQuoteOfTheDay } from '@/constants/quotes';
 import { getLevelTier } from '@/constants/levels';
 import { daysUntilSunday } from '@/utils/dates';
@@ -24,6 +25,7 @@ import { XPBar } from '@/components/ui/XPBar';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { FocusSession, Goal, HabitCompletion } from '@/types';
+import type { ThemeColors } from '@/constants/theme';
 
 const CARD_SHADOW = {
   shadowColor: '#000',
@@ -37,6 +39,8 @@ const CATEGORY_COLORS = ['#60A5FA', '#E8853D', '#A78BFA'];
 const GOAL_BORDER_COLORS = ['#0D9488', '#E8853D', '#A78BFA', '#22C55E', '#60A5FA'];
 
 export function UnifiedHome() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const userName = useAppStore((s) => s.stats?.userName);
   const { todayTasks, refresh: refreshTasks, complete: completeTask } = useTasks();
   const { habits, refresh: refreshHabits, complete: completeHabit, getCompletionsForToday } = useHabits();
@@ -45,6 +49,8 @@ export function UnifiedHome() {
   const { overallStreak } = useStreaks();
   const { checkCanSubmit } = useFlightLog();
 
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [nameInput, setNameInput] = useState('');
   const [intention, setIntention] = useState('');
   const [intentionSet, setIntentionSet] = useState(false);
   const [editingIntention, setEditingIntention] = useState(false);
@@ -84,6 +90,32 @@ export function UnifiedHome() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Show name prompt if user never set their name
+  useEffect(() => {
+    (async () => {
+      const dismissed = await AsyncStorage.getItem('zenflo_name_prompt_dismissed');
+      if (!userName && !dismissed) {
+        setShowNamePrompt(true);
+      }
+    })();
+  }, [userName]);
+
+  const setStats = useAppStore((s) => s.setStats);
+
+  const saveNameFromPrompt = async () => {
+    if (nameInput.trim()) {
+      await setUserName(nameInput.trim());
+      const updated = await getUserStats();
+      setStats(updated);
+    }
+    setShowNamePrompt(false);
+  };
+
+  const dismissNamePrompt = async () => {
+    await AsyncStorage.setItem('zenflo_name_prompt_dismissed', '1');
+    setShowNamePrompt(false);
+  };
 
   useEffect(() => {
     const loadProgress = async () => {
@@ -156,6 +188,42 @@ export function UnifiedHome() {
             <Ionicons name="calendar-outline" size={22} color={Colors.text.secondary} />
           </TouchableOpacity>
         </View>
+
+        {/* 1b. Name setup prompt */}
+        {showNamePrompt && (
+          <View style={[styles.card, styles.namePromptCard]}>
+            <View style={styles.namePromptHeader}>
+              <View style={styles.namePromptLeft}>
+                <Ionicons name="person-circle-outline" size={22} color={Colors.accent} />
+                <Text style={styles.namePromptTitle}>What should we call you?</Text>
+              </View>
+              <TouchableOpacity onPress={dismissNamePrompt} accessibilityLabel="Dismiss">
+                <Ionicons name="close" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.namePromptInputRow}>
+              <TextInput
+                style={styles.namePromptInput}
+                placeholder="Enter your name"
+                placeholderTextColor={Colors.text.tertiary}
+                value={nameInput}
+                onChangeText={setNameInput}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={saveNameFromPrompt}
+                accessibilityLabel="Your name"
+              />
+              <TouchableOpacity
+                style={[styles.namePromptSave, !nameInput.trim() && { opacity: 0.4 }]}
+                onPress={saveNameFromPrompt}
+                disabled={!nameInput.trim()}
+                accessibilityLabel="Save name"
+              >
+                <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* 2. Week strip */}
         <WeekStrip
@@ -542,7 +610,7 @@ export function UnifiedHome() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,
@@ -927,6 +995,49 @@ const styles = StyleSheet.create({
     fontSize: Typography.base,
     color: Colors.text.tertiary,
     textAlign: 'center',
+  },
+  // Name prompt
+  namePromptCard: {
+    gap: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+  },
+  namePromptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  namePromptLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  namePromptTitle: {
+    fontSize: Typography.base,
+    fontWeight: Typography.semibold,
+    color: Colors.text.primary,
+  },
+  namePromptInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  namePromptInput: {
+    flex: 1,
+    fontSize: Typography.base,
+    color: Colors.text.primary,
+    backgroundColor: Colors.background.tertiary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  namePromptSave: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fab: {
     position: 'absolute',

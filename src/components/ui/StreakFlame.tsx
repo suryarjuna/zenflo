@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { useColors, Typography, Spacing } from '../../constants/theme';
 
 interface StreakFlameProps {
   count: number;
@@ -16,6 +16,7 @@ const SIZES = {
 };
 
 export function StreakFlame({ count, size = 'md', frozen }: StreakFlameProps) {
+  const Colors = useColors();
   const { icon: iconSize, text: textSize } = SIZES[size];
 
   if (count === 0) {

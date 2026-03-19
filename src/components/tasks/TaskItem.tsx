@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import type { Task } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface TaskItemProps {
   task: Task;
@@ -12,15 +13,17 @@ interface TaskItemProps {
   onPress?: () => void;
 }
 
-const PRIORITY_COLORS = {
-  high: Colors.danger,
-  medium: Colors.warning,
-  low: Colors.text.tertiary,
-};
-
 export function TaskItem({ task, onComplete, onPress }: TaskItemProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const scale = useSharedValue(1);
   const isCompleted = task.status === 'completed';
+
+  const PRIORITY_COLORS = {
+    high: Colors.danger,
+    medium: Colors.warning,
+    low: Colors.text.tertiary,
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -74,7 +77,7 @@ export function TaskItem({ task, onComplete, onPress }: TaskItemProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

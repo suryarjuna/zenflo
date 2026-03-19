@@ -20,6 +20,7 @@ function rowToTask(row: Record<string, unknown>): Task {
     calendarEventId: (row.calendar_event_id as string) ?? undefined,
     isEvent: (row.is_event as number) === 1,
     eventType: (row.event_type as string) ?? undefined,
+    categoryId: (row.category_id as string) ?? undefined,
   };
 }
 
@@ -71,14 +72,15 @@ export async function createTask(data: {
   calendarEventId?: string;
   isEvent?: boolean;
   eventType?: string;
+  categoryId?: string;
 }): Promise<Task> {
   const db = await getDatabase();
   const id = generateId();
   const now = nowISO();
 
   await db.runAsync(
-    `INSERT INTO tasks (id, goal_id, title, due_date, priority, is_recurring, recurring_interval, scheduled_start, scheduled_end, calendar_event_id, is_event, event_type, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tasks (id, goal_id, title, due_date, priority, is_recurring, recurring_interval, scheduled_start, scheduled_end, calendar_event_id, is_event, event_type, category_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       data.goalId ?? null,
@@ -92,6 +94,7 @@ export async function createTask(data: {
       data.calendarEventId ?? null,
       data.isEvent ? 1 : 0,
       data.eventType ?? null,
+      data.categoryId ?? null,
       now,
     ]
   );
@@ -145,6 +148,7 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<vo
   if (updates.dueDate !== undefined) { fields.push('due_date = ?'); values.push(updates.dueDate ?? null); }
   if (updates.priority !== undefined) { fields.push('priority = ?'); values.push(updates.priority); }
   if (updates.goalId !== undefined) { fields.push('goal_id = ?'); values.push(updates.goalId ?? null); }
+  if (updates.categoryId !== undefined) { fields.push('category_id = ?'); values.push(updates.categoryId ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);

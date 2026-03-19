@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Typography, Spacing, Radius } from '../../constants/theme';
 
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -14,6 +14,9 @@ interface ButtonProps {
 }
 
 export function Button({ variant = 'primary', label, onPress, disabled, loading, icon, style }: ButtonProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+
   const handlePress = () => {
     if (disabled || loading) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -62,7 +65,7 @@ export function Button({ variant = 'primary', label, onPress, disabled, loading,
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   base: {
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,

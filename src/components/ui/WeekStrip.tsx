@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { format, addDays, startOfWeek, isSameDay, isToday } from 'date-fns';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Typography, Spacing, Radius } from '../../constants/theme';
 
 interface WeekStripProps {
   selectedDate: Date;
@@ -9,7 +9,10 @@ interface WeekStripProps {
   accentColor?: string;
 }
 
-export function WeekStrip({ selectedDate, onSelectDate, accentColor = Colors.accent }: WeekStripProps) {
+export function WeekStrip({ selectedDate, onSelectDate, accentColor }: WeekStripProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+  const resolvedAccentColor = accentColor ?? Colors.accent;
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -23,7 +26,7 @@ export function WeekStrip({ selectedDate, onSelectDate, accentColor = Colors.acc
             key={day.toISOString()}
             style={[
               styles.dayItem,
-              selected && [styles.daySelected, { backgroundColor: accentColor }],
+              selected && [styles.daySelected, { backgroundColor: resolvedAccentColor }],
             ]}
             onPress={() => onSelectDate(day)}
             accessibilityRole="button"
@@ -39,7 +42,7 @@ export function WeekStrip({ selectedDate, onSelectDate, accentColor = Colors.acc
             <Text style={[
               styles.dayNumber,
               selected && styles.dayNumberSelected,
-              today && !selected && { color: accentColor },
+              today && !selected && { color: resolvedAccentColor },
             ]}>
               {format(day, 'd')}
             </Text>
@@ -50,7 +53,7 @@ export function WeekStrip({ selectedDate, onSelectDate, accentColor = Colors.acc
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',

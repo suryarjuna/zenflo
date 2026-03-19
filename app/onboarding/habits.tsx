@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressDots } from './welcome';
@@ -20,6 +21,8 @@ const FREQUENCIES: { label: string; value: HabitFrequency }[] = [
 ];
 
 export default function HabitsScreen() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [goalTitle, setGoalTitle] = useState('');
   const [habits, setHabits] = useState<HabitInput[]>([
     { title: '', frequency: 'daily' },
@@ -124,7 +127,7 @@ export default function HabitsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

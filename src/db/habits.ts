@@ -10,6 +10,7 @@ interface CreateHabitInput {
   frequency?: HabitFrequency;
   customDays?: number[];
   xpWeight?: XPWeight;
+  categoryId?: string;
 }
 
 function rowToHabit(row: Record<string, unknown>): Habit {
@@ -24,6 +25,7 @@ function rowToHabit(row: Record<string, unknown>): Habit {
     longestStreak: (row.longest_streak as number) ?? 0,
     freezeTokens: (row.freeze_tokens as number) ?? 1,
     lastCompletedDate: (row.last_completed_date as string) ?? undefined,
+    categoryId: (row.category_id as string) ?? undefined,
     createdAt: row.created_at as string,
     archivedAt: (row.archived_at as string) ?? undefined,
   };
@@ -51,8 +53,8 @@ export async function createHabit(data: CreateHabitInput): Promise<Habit> {
   const id = generateId();
   const now = nowISO();
   await db.runAsync(
-    `INSERT INTO habits (id, goal_id, title, frequency, custom_days, xp_weight, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO habits (id, goal_id, title, frequency, custom_days, xp_weight, category_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       data.goalId ?? null,
@@ -60,6 +62,7 @@ export async function createHabit(data: CreateHabitInput): Promise<Habit> {
       data.frequency ?? 'daily',
       data.customDays ? JSON.stringify(data.customDays) : null,
       data.xpWeight ?? 1,
+      data.categoryId ?? null,
       now,
     ]
   );
@@ -76,6 +79,7 @@ export async function updateHabit(id: string, updates: Partial<Habit>): Promise<
   if (updates.customDays !== undefined) { fields.push('custom_days = ?'); values.push(JSON.stringify(updates.customDays)); }
   if (updates.xpWeight !== undefined) { fields.push('xp_weight = ?'); values.push(updates.xpWeight); }
   if (updates.goalId !== undefined) { fields.push('goal_id = ?'); values.push(updates.goalId ?? null); }
+  if (updates.categoryId !== undefined) { fields.push('category_id = ?'); values.push(updates.categoryId ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Spacing, Radius } from '../../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -9,6 +9,9 @@ interface CardProps {
 }
 
 export function Card({ children, style, onPress }: CardProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+
   if (onPress) {
     return (
       <TouchableOpacity
@@ -25,7 +28,7 @@ export function Card({ children, style, onPress }: CardProps) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: Colors.background.secondary,
     borderRadius: Radius['2xl'],

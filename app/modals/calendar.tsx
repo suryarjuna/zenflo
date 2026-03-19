@@ -4,13 +4,17 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { DaySchedule } from '@/components/calendar/DaySchedule';
 
 export default function CalendarModal() {
+  const Colors = useColors();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const styles = createStyles(Colors);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -64,7 +68,7 @@ export default function CalendarModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background.primary },
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.lg },

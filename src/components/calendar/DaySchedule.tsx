@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { useCalendar } from '../../hooks/useCalendar';
 import { getEventsForDate as getAppEvents } from '../../db/tasks';
 import { getTasksForToday } from '../../db/tasks';
 import { format, parseISO } from 'date-fns';
 import type { Task } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface DayScheduleProps {
   date: Date;
@@ -23,6 +24,8 @@ interface ScheduleItem {
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
 
 export function DaySchedule({ date }: DayScheduleProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const { getEventsForDate } = useCalendar();
 
@@ -103,7 +106,7 @@ export function DaySchedule({ date }: DayScheduleProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },

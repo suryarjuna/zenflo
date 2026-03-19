@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { useColors } from '@/constants/theme';
 
 export default function ModalsLayout() {
+  const Colors = useColors();
   return (
     <Stack
       screenOptions={{
@@ -17,6 +18,7 @@ export default function ModalsLayout() {
       <Stack.Screen name="focus-session" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="flight-log" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="add-event" />
+      <Stack.Screen name="achievements" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="calendar" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
     </Stack>
   );

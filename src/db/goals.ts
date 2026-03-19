@@ -11,6 +11,7 @@ function rowToGoal(row: Record<string, unknown>): Goal {
     targetDate: (row.target_date as string) ?? undefined,
     status: (row.status as GoalStatus) ?? 'active',
     importance: (row.importance as 'high' | 'medium' | 'low') ?? 'medium',
+    categoryId: (row.category_id as string) ?? undefined,
     createdAt: row.created_at as string,
     completedAt: (row.completed_at as string) ?? undefined,
   };
@@ -46,6 +47,7 @@ export async function createGoal(data: {
   description?: string;
   targetDate?: string;
   importance?: 'high' | 'medium' | 'low';
+  categoryId?: string;
 }): Promise<Goal> {
   const db = await getDatabase();
   const id = generateId();
@@ -60,8 +62,8 @@ export async function createGoal(data: {
   }
 
   await db.runAsync(
-    'INSERT INTO goals (id, title, description, target_date, status, importance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [id, data.title, data.description ?? '', data.targetDate ?? null, 'active', data.importance ?? 'medium', now]
+    'INSERT INTO goals (id, title, description, target_date, status, importance, category_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, data.title, data.description ?? '', data.targetDate ?? null, 'active', data.importance ?? 'medium', data.categoryId ?? null, now]
   );
   return (await getGoalById(id))!;
 }
@@ -76,6 +78,7 @@ export async function updateGoal(id: string, updates: Partial<Goal>): Promise<vo
   if (updates.targetDate !== undefined) { fields.push('target_date = ?'); values.push(updates.targetDate ?? null); }
   if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
   if (updates.importance !== undefined) { fields.push('importance = ?'); values.push(updates.importance); }
+  if (updates.categoryId !== undefined) { fields.push('category_id = ?'); values.push(updates.categoryId ?? null); }
 
   if (fields.length === 0) return;
   values.push(id);

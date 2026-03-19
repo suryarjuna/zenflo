@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { StreakFlame } from '../ui/StreakFlame';
 import type { Habit } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface HabitCardProps {
   habit: Habit;
@@ -17,6 +18,8 @@ interface HabitCardProps {
 const CATEGORY_COLORS = ['#9CA3AF', '#E8853D', '#EF4444'];
 
 export function HabitCard({ habit, isCompletedToday, onComplete }: HabitCardProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const scale = useSharedValue(1);
   const xpOpacity = useSharedValue(0);
   const xpTranslateY = useSharedValue(0);
@@ -100,7 +103,7 @@ export function HabitCard({ habit, isCompletedToday, onComplete }: HabitCardProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: Colors.background.secondary,
     borderRadius: Radius['2xl'],

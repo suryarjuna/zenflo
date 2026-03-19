@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { useColors, Typography, Spacing } from '../../constants/theme';
 import { formatDate } from '../../utils/dates';
 import type { FlightLog } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface FlightLogCardProps {
   log: FlightLog;
@@ -11,6 +12,8 @@ interface FlightLogCardProps {
 }
 
 export function FlightLogCard({ log, onPress }: FlightLogCardProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const scoreColor = log.habitScore < 40 ? Colors.danger : log.habitScore < 70 ? Colors.warning : Colors.success;
 
   return (
@@ -31,7 +34,7 @@ export function FlightLogCard({ log, onPress }: FlightLogCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

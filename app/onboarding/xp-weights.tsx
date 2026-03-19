@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressDots } from './welcome';
@@ -15,13 +16,16 @@ interface HabitWithWeight {
   xpWeight: XPWeight;
 }
 
-const WEIGHT_OPTIONS: { value: XPWeight; label: string; xp: number; color: string }[] = [
+const getWeightOptions = (Colors: ThemeColors): { value: XPWeight; label: string; xp: number; color: string }[] => [
   { value: 1, label: 'Standard', xp: 10, color: Colors.text.tertiary },
   { value: 2, label: 'Important', xp: 20, color: Colors.warning },
   { value: 3, label: 'Critical', xp: 30, color: Colors.athlete.primary },
 ];
 
 export default function XPWeightsScreen() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+  const WEIGHT_OPTIONS = getWeightOptions(Colors);
   const [habits, setHabits] = useState<HabitWithWeight[]>([]);
 
   useEffect(() => {
@@ -109,7 +113,7 @@ export default function XPWeightsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

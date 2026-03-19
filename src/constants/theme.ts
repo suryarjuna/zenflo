@@ -1,19 +1,21 @@
 // Zenflo Design System
-// Inspired by warm, mindful aesthetics with the orange meditation logo accent
+// Supports dark (default) and light (orange) themes
 
-export const Colors = {
-  // Dark theme (default)
+import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
+
+// ---------- Color Definitions ----------
+
+export const DarkColors = {
   background: {
     primary:   '#0F0E17',
     secondary: '#1A1929',
     tertiary:  '#252438',
     elevated:  '#2D2C45',
   },
-  // Brand accent — matches the Zenflo logo orange
   accent:      '#E8853D',
   accentMuted: '#C4693A',
   accentLight: '#E8853D20',
-  // Warm surface colors for cards
   surface: {
     warm:     '#2A2234',
     warmLight:'#342A3E',
@@ -52,6 +54,93 @@ export const Colors = {
   streakGold:   '#FFD700',
   streakFrozen: '#60A5FA',
 };
+
+export const LightColors: ThemeColors = {
+  background: {
+    primary:   '#FBF8F5',
+    secondary: '#F3EFE9',
+    tertiary:  '#E8E3DC',
+    elevated:  '#FFFFFF',
+  },
+  accent:      '#E8853D',
+  accentMuted: '#C4693A',
+  accentLight: '#E8853D15',
+  surface: {
+    warm:     '#FFF5EC',
+    warmLight:'#FFF9F3',
+  },
+  monk: {
+    primary:    '#7C3AED',
+    background: '#F5F0FF',
+    text:       '#2D1B69',
+  },
+  athlete: {
+    primary:    '#E8853D',
+    background: '#FFF5EC',
+    text:       '#5C3A1A',
+  },
+  pilot: {
+    primary:    '#0D9488',
+    background: '#F0FDFB',
+    text:       '#0A4A44',
+  },
+  success: '#16A34A',
+  warning: '#CA8A04',
+  danger:  '#DC2626',
+  xp:      '#D97706',
+  text: {
+    primary:   '#1A1929',
+    secondary: '#5C5A80',
+    tertiary:  '#9B99C5',
+    inverse:   '#FFFFFF',
+  },
+  border: {
+    subtle:  'rgba(0,0,0,0.04)',
+    default: 'rgba(0,0,0,0.08)',
+    strong:  'rgba(0,0,0,0.16)',
+  },
+  streakFire:   '#E8853D',
+  streakGold:   '#D97706',
+  streakFrozen: '#3B82F6',
+};
+
+export type ThemeColors = typeof DarkColors;
+export type ThemeMode = 'dark' | 'light';
+
+// ---------- Theme Store ----------
+
+interface ThemeState {
+  mode: ThemeMode;
+  colors: ThemeColors;
+  setMode: (mode: ThemeMode) => void;
+  toggle: () => void;
+}
+
+export const useThemeStore = create<ThemeState>((set) => ({
+  mode: 'dark',
+  colors: DarkColors,
+  setMode: (mode) => set({ mode, colors: mode === 'dark' ? DarkColors : LightColors }),
+  toggle: () => set((s) => {
+    const next = s.mode === 'dark' ? 'light' : 'dark';
+    return { mode: next, colors: next === 'dark' ? DarkColors : LightColors };
+  }),
+}));
+
+// ---------- Hook ----------
+
+export function useColors(): ThemeColors {
+  return useThemeStore((s) => s.colors);
+}
+
+export function useThemeMode(): ThemeMode {
+  return useThemeStore((s) => s.mode);
+}
+
+// ---------- Backwards-compatible static export (for non-component code) ----------
+
+export const Colors = DarkColors;
+
+// ---------- Other Design Tokens ----------
 
 export const Typography = {
   xs: 11, sm: 13, base: 15, md: 17, lg: 20, xl: 24, '2xl': 30, '3xl': 38, '4xl': 48,

@@ -2,22 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { SmartDatePicker } from '@/components/ui/SmartDatePicker';
 import { useTasks } from '@/hooks/useTasks';
 import { useGoals } from '@/hooks/useGoals';
 import { useCalendar } from '@/hooks/useCalendar';
+import { CategoryPicker } from '@/components/ui/CategoryPicker';
+import { getAllCategories, createCategory } from '@/db/categories';
 import { Ionicons } from '@expo/vector-icons';
-import type { TaskPriority, Task } from '@/types';
+import type { TaskPriority, Task, Category } from '@/types';
 
-const PRIORITIES: { label: string; value: TaskPriority; color: string }[] = [
+const getPriorities = (Colors: ThemeColors): { label: string; value: TaskPriority; color: string }[] => [
   { label: 'High', value: 'high', color: Colors.danger },
   { label: 'Medium', value: 'medium', color: Colors.warning },
   { label: 'Low', value: 'low', color: Colors.text.tertiary },
 ];
 
 export default function AddTaskModal() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+  const PRIORITIES = getPriorities(Colors);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [dueDate, setDueDate] = useState('');
@@ -27,12 +33,17 @@ export default function AddTaskModal() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [categoryId, setCategoryId] = useState<string | undefined>();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const { add } = useTasks();
   const { goals, refresh: refreshGoals } = useGoals();
   const { requestPermissions, createCalendarEvent } = useCalendar();
 
-  useEffect(() => { refreshGoals(); }, []);
+  useEffect(() => {
+    refreshGoals();
+    getAllCategories().then(setCategories);
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -65,6 +76,7 @@ export default function AddTaskModal() {
         priority,
         dueDate: dueDate || undefined,
         goalId,
+        categoryId,
         isRecurring,
         recurringInterval: isRecurring ? recurringInterval : undefined,
         scheduledStart,
@@ -138,6 +150,20 @@ export default function AddTaskModal() {
               endTime={endTime}
               onStartTimeChange={setStartTime}
               onEndTimeChange={setEndTime}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Category</Text>
+            <CategoryPicker
+              categories={categories}
+              selectedId={categoryId}
+              onSelect={setCategoryId}
+              onCreateCategory={async (data) => {
+                const cat = await createCategory(data);
+                setCategories(prev => [...prev, cat]);
+                setCategoryId(cat.id);
+              }}
             />
           </View>
 
@@ -233,7 +259,7 @@ export default function AddTaskModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background.primary },
   container: { flex: 1, padding: Spacing.xl },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },

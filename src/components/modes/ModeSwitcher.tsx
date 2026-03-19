@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { Modes } from '../../constants/modes';
 import { useModeStore } from '../../store/useModeStore';
 import type { Mode } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 export function ModeSwitcher() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const { currentMode, setMode } = useModeStore();
   const modes = Object.values(Modes);
 
@@ -38,7 +41,7 @@ export function ModeSwitcher() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-around',

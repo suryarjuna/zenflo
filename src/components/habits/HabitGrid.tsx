@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { HabitCard } from './HabitCard';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { useColors, Typography, Spacing } from '../../constants/theme';
 import type { Habit, HabitCompletion } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface HabitGridProps {
   habits: Habit[];
@@ -11,6 +12,8 @@ interface HabitGridProps {
 }
 
 export function HabitGrid({ habits, completions, onComplete }: HabitGridProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const completedIds = new Set(completions.map(c => c.habitId));
 
   if (habits.length === 0) {
@@ -35,7 +38,7 @@ export function HabitGrid({ habits, completions, onComplete }: HabitGridProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   list: {
     gap: Spacing.md,
   },

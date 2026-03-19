@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { XPBar } from '@/components/ui/XPBar';
@@ -25,6 +26,7 @@ import { useCalendar } from '@/hooks/useCalendar';
 import type { CalendarProvider } from '@/hooks/useCalendar';
 
 export default function SettingsScreen() {
+  const Colors = useColors();
   const stats = useAppStore((s) => s.stats);
   const setStats = useAppStore((s) => s.setStats);
   const { level, totalXP, progress, tier } = useXP();
@@ -118,6 +120,9 @@ export default function SettingsScreen() {
     const updated = await getSettings();
     setNotifSettings(updated);
   };
+
+  const styles = createStyles(Colors);
+  const nStyles = createNotifStyles(Colors);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -263,6 +268,8 @@ export default function SettingsScreen() {
 }
 
 function NotifRow({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle: () => void }) {
+  const Colors = useColors();
+  const notifStyles = createNotifStyles(Colors);
   return (
     <TouchableOpacity
       onPress={onToggle}
@@ -281,12 +288,12 @@ function NotifRow({ label, enabled, onToggle }: { label: string; enabled: boolea
   );
 }
 
-const notifStyles = StyleSheet.create({
+const createNotifStyles = (Colors: ThemeColors) => StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.sm },
   label: { fontSize: Typography.base, color: Colors.text.primary, flex: 1 },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background.primary },
   content: { padding: Spacing.xl, gap: Spacing.xl, paddingBottom: Spacing['4xl'] },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

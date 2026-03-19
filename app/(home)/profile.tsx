@@ -1,34 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, useThemeStore, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { XPBar } from '@/components/ui/XPBar';
 import { useAppStore } from '@/store/useAppStore';
 import { useXP } from '@/hooks/useXP';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useHabits } from '@/hooks/useHabits';
 import { useCalendar } from '@/hooks/useCalendar';
 import { getDatabase } from '@/db/database';
-import { getUserStats, setUserName, getUnlockedBadges, getXPEvents } from '@/db/xp';
-import { getAllGoals } from '@/db/goals';
-import { getAllHabits } from '@/db/habits';
+import { getUserStats, setUserName } from '@/db/xp';
 import { getLevelTier } from '@/constants/levels';
-import { BADGES } from '@/constants/badges';
-import { Badge as BadgeComponent } from '@/components/ui/Badge';
 import { formatDate } from '@/utils/dates';
 import type { CalendarProvider } from '@/hooks/useCalendar';
 
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => i);
+
+function formatHour(h: number): string {
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hr = h % 12 || 12;
+  return `${hr}:00 ${period}`;
+}
+
 export default function ProfileScreen() {
+  const Colors = useColors();
   const stats = useAppStore((s) => s.stats);
   const setStats = useAppStore((s) => s.setStats);
   const { level, totalXP, progress, tier } = useXP();
-  const { getSettings, toggleNotification, NOTIFICATION_KEYS } = useNotifications();
-  const { habits } = useHabits();
+  const { getSettings, toggleNotification, setNotificationTime, getNotificationTimes, NOTIFICATION_KEYS } = useNotifications();
   const { getCalendarPreference, setCalendarPreference } = useCalendar();
 
   const [editingName, setEditingName] = useState(false);
@@ -39,12 +42,17 @@ export default function ProfileScreen() {
     streakEnabled: true,
     flightLogEnabled: true,
   });
-  const [unlockedBadges, setUnlockedBadges] = useState<Set<string>>(new Set());
+  const [notifTimes, setNotifTimes] = useState({
+    morningHour: 8,
+    streakHour: 21,
+    flightLogHour: 9,
+  });
+  const [editingTime, setEditingTime] = useState<string | null>(null);
 
   useEffect(() => {
     getSettings().then(setNotifSettings);
-    getUnlockedBadges().then(badges => setUnlockedBadges(new Set(badges.map(b => b.id))));
     getCalendarPreference().then(setCalendarProviderState);
+    getNotificationTimes().then(setNotifTimes);
   }, []);
 
   useEffect(() => {
@@ -62,6 +70,9 @@ export default function ProfileScreen() {
 
   const handleExport = async () => {
     try {
+      const { getAllGoals } = await import('@/db/goals');
+      const { getAllHabits } = await import('@/db/habits');
+      const { getUnlockedBadges, getXPEvents } = await import('@/db/xp');
       const data = {
         stats: await getUserStats(),
         goals: await getAllGoals(),
@@ -81,7 +92,7 @@ export default function ProfileScreen() {
   const handleClearData = () => {
     Alert.alert(
       'Clear all data?',
-      'This will permanently delete all your goals, habits, tasks, sessions, and progress. This cannot be undone.',
+      'This will permanently delete all your progress. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -131,6 +142,13 @@ export default function ProfileScreen() {
     setNotifSettings(updated);
   };
 
+  const handleTimeChange = async (which: string, hour: number) => {
+    await setNotificationTime(which, hour);
+    const times = await getNotificationTimes();
+    setNotifTimes(times);
+    setEditingTime(null);
+  };
+
   const initials = (stats?.userName ?? 'Z')
     .split(' ')
     .map(w => w[0])
@@ -138,12 +156,23 @@ export default function ProfileScreen() {
     .slice(0, 2)
     .toUpperCase();
 
+  const calendarOptions: { value: CalendarProvider; label: string; icon: 'logo-apple' | 'logo-google' | 'sync-outline' | 'close-circle-outline' }[] = [
+    { value: 'apple', label: 'Apple', icon: 'logo-apple' },
+    { value: 'google', label: 'Google', icon: 'logo-google' },
+    { value: 'both', label: 'Both', icon: 'sync-outline' },
+    { value: 'none', label: 'None', icon: 'close-circle-outline' },
+  ];
+
+  const styles = createStyles(Colors);
+  const nStyles = createNotifStyles(Colors);
+  const tpStyles = createTimePickerStyles(Colors);
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.screenTitle}>Profile</Text>
 
-        {/* Avatar + Name + Level */}
+        {/* Avatar + Name + Level — properly centered */}
         <Card style={styles.profileCard}>
           <View style={[styles.avatar, { borderColor: tier.color }]}>
             <Text style={[styles.avatarText, { color: tier.color }]}>{initials}</Text>
@@ -172,32 +201,62 @@ export default function ProfileScreen() {
           ) : (
             <TouchableOpacity onPress={() => setEditingName(true)} style={styles.nameRow} accessibilityLabel="Edit name">
               <Text style={styles.userName}>{stats?.userName ?? 'Zenflo User'}</Text>
-              <Ionicons name="pencil" size={16} color={Colors.text.tertiary} />
+              <Ionicons name="pencil" size={14} color={Colors.text.tertiary} />
             </TouchableOpacity>
           )}
 
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.name}</Text>
           <Text style={styles.profileLevel}>Level {level}</Text>
-          <XPBar currentXP={progress.current} totalXP={progress.required} level={level} />
+          <View style={styles.xpBarContainer}>
+            <XPBar currentXP={progress.current} totalXP={progress.required} level={level} />
+          </View>
           <Text style={styles.totalXP}>{totalXP.toLocaleString()} total XP</Text>
-          {stats?.lastActiveDate && (
-            <Text style={styles.memberSince}>Member since {formatDate(stats.lastActiveDate)}</Text>
-          )}
         </Card>
 
-        {/* Calendar Integration */}
+        {/* Theme toggle */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Calendar Integration</Text>
-          <Card style={{ gap: Spacing.md }}>
-            <Text style={styles.explainText}>
-              Choose which calendar to sync with.
-            </Text>
-            {([
-              { value: 'apple' as CalendarProvider, label: 'Apple Calendar', icon: 'logo-apple' as const },
-              { value: 'google' as CalendarProvider, label: 'Google Calendar', icon: 'logo-google' as const },
-              { value: 'both' as CalendarProvider, label: 'Both', icon: 'sync-outline' as const },
-              { value: 'none' as CalendarProvider, label: 'None', icon: 'close-circle-outline' as const },
-            ]).map(opt => {
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <View style={styles.themeRow}>
+            <ThemeOption
+              icon="sunny"
+              label="Light"
+              active={useThemeStore.getState().mode === 'light'}
+              onPress={async () => {
+                useThemeStore.getState().setMode('light');
+                await AsyncStorage.setItem('zenflo_theme', 'light');
+              }}
+            />
+            <ThemeOption
+              icon="moon"
+              label="Dark"
+              active={useThemeStore.getState().mode === 'dark'}
+              onPress={async () => {
+                useThemeStore.getState().setMode('dark');
+                await AsyncStorage.setItem('zenflo_theme', 'dark');
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Achievements & Badges — navigates to detail screen */}
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => router.push('/modals/achievements')}
+          accessibilityRole="button"
+          accessibilityLabel="View achievements and badges"
+        >
+          <View style={styles.menuLeft}>
+            <Ionicons name="trophy-outline" size={20} color={Colors.accent} />
+            <Text style={styles.menuLabel}>Achievements & Badges</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.text.tertiary} />
+        </TouchableOpacity>
+
+        {/* Calendar Integration — compact inline chips */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Calendar</Text>
+          <View style={styles.calendarChips}>
+            {calendarOptions.map(opt => {
               const isActive = calendarProvider === opt.value;
               return (
                 <TouchableOpacity
@@ -209,117 +268,286 @@ export default function ProfileScreen() {
                   accessibilityRole="radio"
                   accessibilityLabel={opt.label}
                   accessibilityState={{ selected: isActive }}
-                  style={[styles.optionRow, isActive && styles.optionRowActive]}
+                  style={[styles.calendarChip, isActive && styles.calendarChipActive]}
                 >
-                  <Ionicons name={opt.icon} size={20} color={isActive ? Colors.accent : Colors.text.tertiary} />
-                  <Text style={[styles.optionLabel, isActive && { color: Colors.accent }]}>{opt.label}</Text>
-                  {isActive && <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />}
+                  <Ionicons name={opt.icon} size={16} color={isActive ? Colors.accent : Colors.text.tertiary} />
+                  <Text style={[styles.calendarChipText, isActive && { color: Colors.accent }]}>{opt.label}</Text>
                 </TouchableOpacity>
               );
             })}
-          </Card>
-        </View>
-
-        {/* Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          <Card>
-            <NotifRow
-              label="Morning ritual (8:00 AM)"
-              enabled={notifSettings.morningEnabled}
-              onToggle={() => toggleNotif(NOTIFICATION_KEYS.morningEnabled, notifSettings.morningEnabled)}
-            />
-            <NotifRow
-              label="Streak at risk (9:00 PM)"
-              enabled={notifSettings.streakEnabled}
-              onToggle={() => toggleNotif(NOTIFICATION_KEYS.streakEnabled, notifSettings.streakEnabled)}
-            />
-            <NotifRow
-              label="Flight Log ready (Sunday 9 AM)"
-              enabled={notifSettings.flightLogEnabled}
-              onToggle={() => toggleNotif(NOTIFICATION_KEYS.flightLogEnabled, notifSettings.flightLogEnabled)}
-            />
-          </Card>
-        </View>
-
-        {/* Streak Freeze */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Streak Freeze</Text>
-          <Card>
-            <Text style={styles.explainText}>
-              Freeze tokens protect your streak for one missed day. Earn them every 14 consecutive days. Max 2 per habit.
-            </Text>
-            {habits.map(h => (
-              <View key={h.id} style={styles.freezeRow}>
-                <Text style={styles.freezeHabit} numberOfLines={1}>{h.title}</Text>
-                <Text style={styles.freezeCount}>{h.freezeTokens}/2</Text>
-              </View>
-            ))}
-          </Card>
-        </View>
-
-        {/* Badges */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Badges</Text>
-          <View style={styles.badgeGrid}>
-            {BADGES.map(badge => (
-              <BadgeComponent
-                key={badge.id}
-                icon={badge.icon}
-                name={badge.name}
-                description={badge.description}
-                unlocked={unlockedBadges.has(badge.id)}
-              />
-            ))}
           </View>
         </View>
 
-        {/* Data */}
+        {/* Notifications — with time pickers */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data</Text>
-          <Card style={{ gap: Spacing.md }}>
-            <Button variant="secondary" label="Export as JSON" onPress={handleExport} />
-            <Button variant="danger" label="Clear all data" onPress={handleClearData} />
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Card style={styles.notifCard}>
+            <NotifRow
+              label="Morning ritual"
+              enabled={notifSettings.morningEnabled}
+              time={formatHour(notifTimes.morningHour)}
+              onToggle={() => toggleNotif(NOTIFICATION_KEYS.morningEnabled, notifSettings.morningEnabled)}
+              onTimePress={() => setEditingTime(editingTime === 'morning' ? null : 'morning')}
+            />
+            {editingTime === 'morning' && (
+              <TimePicker
+                selectedHour={notifTimes.morningHour}
+                onSelect={(h) => handleTimeChange('morning', h)}
+              />
+            )}
+
+            <NotifRow
+              label="Streak at risk"
+              enabled={notifSettings.streakEnabled}
+              time={formatHour(notifTimes.streakHour)}
+              onToggle={() => toggleNotif(NOTIFICATION_KEYS.streakEnabled, notifSettings.streakEnabled)}
+              onTimePress={() => setEditingTime(editingTime === 'streak' ? null : 'streak')}
+            />
+            {editingTime === 'streak' && (
+              <TimePicker
+                selectedHour={notifTimes.streakHour}
+                onSelect={(h) => handleTimeChange('streak', h)}
+              />
+            )}
+
+            <NotifRow
+              label="Flight Log (Sunday)"
+              enabled={notifSettings.flightLogEnabled}
+              time={formatHour(notifTimes.flightLogHour)}
+              onToggle={() => toggleNotif(NOTIFICATION_KEYS.flightLogEnabled, notifSettings.flightLogEnabled)}
+              onTimePress={() => setEditingTime(editingTime === 'flightLog' ? null : 'flightLog')}
+            />
+            {editingTime === 'flightLog' && (
+              <TimePicker
+                selectedHour={notifTimes.flightLogHour}
+                onSelect={(h) => handleTimeChange('flightLog', h)}
+              />
+            )}
           </Card>
         </View>
 
-        {/* About */}
+        {/* Data — compact row */}
         <View style={styles.section}>
-          <Card>
-            <Text style={styles.aboutText}>Zenflo v1.0.0</Text>
-            <Text style={styles.aboutSubtext}>Zenflo is and will always be free.</Text>
-          </Card>
+          <Text style={styles.sectionTitle}>Data</Text>
+          <View style={styles.dataRow}>
+            <TouchableOpacity style={styles.dataButton} onPress={handleExport} accessibilityLabel="Export data">
+              <Ionicons name="download-outline" size={18} color={Colors.text.secondary} />
+              <Text style={styles.dataButtonText}>Export</Text>
+            </TouchableOpacity>
+            <View style={styles.dataDivider} />
+            <TouchableOpacity style={styles.dataButton} onPress={handleClearData} accessibilityLabel="Clear all data">
+              <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+              <Text style={[styles.dataButtonText, { color: Colors.danger }]}>Clear all</Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Footer */}
+        <Text style={styles.footerVersion}>Zenflo v1.0.0 — Free forever</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function NotifRow({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle: () => void }) {
+function ThemeOption({ icon, label, active, onPress }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const Colors = useColors();
   return (
     <TouchableOpacity
-      onPress={onToggle}
-      style={notifStyles.row}
-      accessibilityRole="switch"
+      onPress={onPress}
+      accessibilityRole="radio"
       accessibilityLabel={label}
-      accessibilityState={{ checked: enabled }}
+      accessibilityState={{ selected: active }}
+      style={{
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
+        backgroundColor: active ? Colors.accent + '15' : Colors.background.secondary,
+        borderRadius: Radius.md,
+        paddingVertical: Spacing.md,
+        borderWidth: active ? 1.5 : 1,
+        borderColor: active ? Colors.accent : 'transparent',
+      }}
     >
-      <Text style={notifStyles.label}>{label}</Text>
-      <Ionicons
-        name={enabled ? 'toggle' : 'toggle-outline'}
-        size={36}
-        color={enabled ? Colors.accent : Colors.text.tertiary}
-      />
+      <Ionicons name={icon} size={18} color={active ? Colors.accent : Colors.text.tertiary} />
+      <Text style={{
+        fontSize: Typography.sm,
+        fontWeight: active ? Typography.semibold : Typography.medium,
+        color: active ? Colors.accent : Colors.text.secondary,
+      }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-const notifStyles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.sm },
-  label: { fontSize: Typography.base, color: Colors.text.primary, flex: 1 },
+function NotifRow({ label, enabled, time, onToggle, onTimePress }: {
+  label: string;
+  enabled: boolean;
+  time: string;
+  onToggle: () => void;
+  onTimePress: () => void;
+}) {
+  const Colors = useColors();
+  const notifStyles = createNotifStyles(Colors);
+  return (
+    <View style={notifStyles.row}>
+      <TouchableOpacity
+        onPress={onToggle}
+        style={notifStyles.toggleArea}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: enabled }}
+      >
+        <Ionicons
+          name={enabled ? 'notifications' : 'notifications-off-outline'}
+          size={18}
+          color={enabled ? Colors.accent : Colors.text.tertiary}
+        />
+        <Text style={[notifStyles.label, !enabled && { color: Colors.text.tertiary }]}>{label}</Text>
+      </TouchableOpacity>
+      {enabled && (
+        <TouchableOpacity onPress={onTimePress} style={notifStyles.timePill} accessibilityLabel={`Change time for ${label}`}>
+          <Text style={notifStyles.timeText}>{time}</Text>
+          <Ionicons name="chevron-down" size={14} color={Colors.accent} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity onPress={onToggle} accessibilityLabel={`Toggle ${label}`}>
+        <Ionicons
+          name={enabled ? 'toggle' : 'toggle-outline'}
+          size={32}
+          color={enabled ? Colors.accent : Colors.text.tertiary}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function TimePicker({ selectedHour, onSelect }: { selectedHour: number; onSelect: (h: number) => void }) {
+  const Colors = useColors();
+  const timePickerStyles = createTimePickerStyles(Colors);
+  const scrollRef = useRef<ScrollView>(null);
+  const ROW_HEIGHT = 44;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, selectedHour * ROW_HEIGHT - ROW_HEIGHT * 2),
+        animated: false,
+      });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isCommonHour = (h: number) => h >= 6 && h <= 22;
+
+  return (
+    <ScrollView
+      ref={scrollRef}
+      showsVerticalScrollIndicator={false}
+      style={timePickerStyles.scroll}
+      contentContainerStyle={timePickerStyles.container}
+    >
+      {HOUR_OPTIONS.map(h => (
+        <TouchableOpacity
+          key={h}
+          style={[
+            timePickerStyles.row,
+            h === selectedHour && timePickerStyles.rowActive,
+          ]}
+          onPress={() => onSelect(h)}
+          accessibilityLabel={formatHour(h)}
+        >
+          <Text
+            style={[
+              timePickerStyles.rowText,
+              h === selectedHour && timePickerStyles.rowTextActive,
+              !isCommonHour(h) && h !== selectedHour && timePickerStyles.rowTextDim,
+            ]}
+          >
+            {formatHour(h)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+}
+
+const createTimePickerStyles = (Colors: ThemeColors) => StyleSheet.create({
+  scroll: {
+    height: 180,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.xs,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.background.tertiary,
+  },
+  container: {
+    paddingVertical: Spacing.xs,
+  },
+  row: {
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.sm,
+    marginHorizontal: Spacing.xs,
+  },
+  rowActive: {
+    backgroundColor: Colors.accent,
+  },
+  rowText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.medium,
+    color: Colors.text.primary,
+  },
+  rowTextActive: {
+    color: '#FFFFFF',
+    fontWeight: Typography.semibold,
+  },
+  rowTextDim: {
+    color: Colors.text.tertiary,
+  },
 });
 
-const styles = StyleSheet.create({
+const createNotifStyles = (Colors: ThemeColors) => StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  toggleArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  label: {
+    fontSize: Typography.sm,
+    color: Colors.text.primary,
+    fontWeight: Typography.medium,
+  },
+  timePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.accent + '15',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+  },
+  timeText: {
+    fontSize: Typography.xs,
+    color: Colors.accent,
+    fontWeight: Typography.semibold,
+  },
+});
+
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,
@@ -334,10 +562,11 @@ const styles = StyleSheet.create({
     fontWeight: Typography.bold,
     color: Colors.text.primary,
   },
-  // Profile card
+  // Profile card — centered layout
   profileCard: {
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+    paddingVertical: Spacing.xl,
   },
   avatar: {
     width: 72,
@@ -347,7 +576,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   avatarText: {
     fontSize: Typography.xl,
@@ -357,6 +586,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   userName: {
     fontSize: Typography.xl,
@@ -367,6 +597,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   nameInput: {
     fontSize: Typography.lg,
@@ -378,85 +609,120 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tierName: {
-    fontSize: Typography.md,
+    fontSize: Typography.sm,
     fontWeight: Typography.semibold,
   },
   profileLevel: {
-    fontSize: Typography.sm,
+    fontSize: Typography.xs,
     color: Colors.text.secondary,
   },
+  xpBarContainer: {
+    width: '100%',
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
   totalXP: {
-    fontSize: Typography.sm,
+    fontSize: Typography.xs,
     color: Colors.xp,
     fontWeight: Typography.semibold,
+    marginTop: Spacing.xs,
   },
-  memberSince: {
-    fontSize: Typography.xs,
-    color: Colors.text.tertiary,
+  // Menu row (achievements)
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.background.secondary,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  menuLabel: {
+    fontSize: Typography.base,
+    fontWeight: Typography.medium,
+    color: Colors.text.primary,
   },
   // Sections
   section: {
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   sectionTitle: {
-    fontSize: Typography.md,
-    fontWeight: Typography.semibold,
-    color: Colors.text.primary,
-  },
-  explainText: {
     fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
     color: Colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  // Options (calendar, etc.)
-  optionRow: {
+  // Theme toggle
+  themeRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  // Calendar — compact chips
+  calendarChips: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  calendarChip: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    backgroundColor: Colors.background.tertiary,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.background.secondary,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.sm,
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  optionRowActive: {
+  calendarChipActive: {
     borderColor: Colors.accent,
-    borderWidth: 2,
   },
-  optionLabel: {
-    fontSize: Typography.base,
+  calendarChipText: {
+    fontSize: Typography.xs,
     fontWeight: Typography.medium,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  // Freeze
-  freezeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  freezeHabit: {
-    fontSize: Typography.base,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  freezeCount: {
-    fontSize: Typography.sm,
-    color: Colors.streakFrozen,
-    fontWeight: Typography.medium,
-  },
-  // Badges
-  badgeGrid: {
-    gap: Spacing.sm,
-  },
-  // About
-  aboutText: {
-    fontSize: Typography.base,
-    color: Colors.text.primary,
-  },
-  aboutSubtext: {
-    fontSize: Typography.sm,
     color: Colors.text.secondary,
-    marginTop: Spacing.xs,
+  },
+  // Notifications
+  notifCard: {
+    gap: Spacing.xs,
+  },
+  // Data — compact row
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background.secondary,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+  },
+  dataButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+  },
+  dataButtonText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.medium,
+    color: Colors.text.secondary,
+  },
+  dataDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.border.subtle,
+  },
+  // Footer
+  footerVersion: {
+    fontSize: Typography.xs,
+    color: Colors.text.tertiary,
+    textAlign: 'center',
+    marginTop: Spacing.md,
   },
 });

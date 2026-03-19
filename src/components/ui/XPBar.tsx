@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { getLevelTier } from '../../constants/levels';
 
 interface XPBarProps {
@@ -11,6 +11,8 @@ interface XPBarProps {
 }
 
 export function XPBar({ currentXP, totalXP, level }: XPBarProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const progress = useSharedValue(0);
   const percent = totalXP > 0 ? currentXP / totalXP : 0;
 
@@ -37,7 +39,7 @@ export function XPBar({ currentXP, totalXP, level }: XPBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     gap: Spacing.xs,
   },

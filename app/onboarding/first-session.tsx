@@ -6,7 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { Colors, Typography, Spacing } from '@/constants/theme';
+import { useColors, Typography, Spacing } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressDots } from './welcome';
@@ -70,6 +71,8 @@ async function saveOnboardingData(setStats: (s: ReturnType<typeof getUserStats> 
 }
 
 export default function FirstSessionScreen() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [state, setState] = useState<'ready' | 'running' | 'completed'>('ready');
   const [secondsLeft, setSecondsLeft] = useState(SESSION_DURATION);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -234,7 +237,7 @@ export default function FirstSessionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.monk.background,

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { format, addDays } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Typography, Spacing, Radius } from '../../constants/theme';
 
 interface SmartDatePickerProps {
   value: string;
@@ -25,6 +25,8 @@ export function SmartDatePicker({
   onStartTimeChange,
   onEndTimeChange,
 }: SmartDatePickerProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [showCustom, setShowCustom] = useState(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -131,7 +133,7 @@ export function SmartDatePicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     gap: Spacing.sm,
   },

@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { formatDate } from '../../utils/dates';
 import type { Goal } from '../../types';
+import type { ThemeColors } from '../../constants/theme';
 
 interface GoalCardProps {
   goal: Goal;
@@ -12,6 +13,9 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal, progress, onPress }: GoalCardProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.header}>
@@ -49,7 +53,7 @@ export function GoalCard({ goal, progress, onPress }: GoalCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   card: {
     gap: Spacing.sm,
   },

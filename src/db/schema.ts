@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const CREATE_TABLES = `
   PRAGMA journal_mode = WAL;
@@ -103,6 +103,14 @@ export const CREATE_TABLES = `
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#E8853D',
+    icon TEXT,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS badges (
     id TEXT PRIMARY KEY,
     unlocked_at TEXT NOT NULL
@@ -129,6 +137,25 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE tasks ADD COLUMN calendar_event_id TEXT;
       ALTER TABLE tasks ADD COLUMN is_event INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE tasks ADD COLUMN event_type TEXT;
+    `,
+  },
+  {
+    version: 4,
+    sql: `
+      CREATE TABLE IF NOT EXISTS categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT '#E8853D',
+        icon TEXT,
+        created_at TEXT NOT NULL
+      );
+      INSERT OR IGNORE INTO categories (id, name, color, icon, created_at) VALUES ('cat_work', 'Work', '#60A5FA', 'briefcase-outline', datetime('now'));
+      INSERT OR IGNORE INTO categories (id, name, color, icon, created_at) VALUES ('cat_health', 'Health', '#22C55E', 'heart-outline', datetime('now'));
+      INSERT OR IGNORE INTO categories (id, name, color, icon, created_at) VALUES ('cat_personal', 'Personal', '#A78BFA', 'person-outline', datetime('now'));
+      INSERT OR IGNORE INTO categories (id, name, color, icon, created_at) VALUES ('cat_hobby', 'Hobby', '#F97316', 'color-palette-outline', datetime('now'));
+      ALTER TABLE tasks ADD COLUMN category_id TEXT REFERENCES categories(id) ON DELETE SET NULL;
+      ALTER TABLE habits ADD COLUMN category_id TEXT REFERENCES categories(id) ON DELETE SET NULL;
+      ALTER TABLE goals ADD COLUMN category_id TEXT REFERENCES categories(id) ON DELETE SET NULL;
     `,
   },
 ];

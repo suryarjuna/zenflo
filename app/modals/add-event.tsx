@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { SmartDatePicker } from '@/components/ui/SmartDatePicker';
 import { useTasks } from '@/hooks/useTasks';
@@ -18,6 +19,8 @@ const EVENT_TYPES = [
 ];
 
 export default function AddEventModal() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [title, setTitle] = useState('');
   const [eventType, setEventType] = useState('custom');
   const [date, setDate] = useState('');
@@ -135,7 +138,7 @@ export default function AddEventModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background.primary },
   container: { flex: 1, padding: Spacing.xl },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },

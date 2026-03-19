@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { getAllHabits, createHabit, completeHabit, archiveHabit, getHabitCompletionsForDate } from '../db/habits';
 import { getUserStats } from '../db/xp';
 import { todayISO } from '../utils/dates';
+import { syncWidgetData } from '../utils/widgetSync';
 import type { Habit, HabitCompletion, HabitFrequency, XPWeight } from '../types';
 
 export function useHabits() {
@@ -15,6 +16,7 @@ export function useHabits() {
   const refresh = useCallback(async () => {
     const h = await getAllHabits();
     setHabits(h);
+    syncWidgetData();
   }, [setHabits]);
 
   const add = useCallback(async (data: {
@@ -23,6 +25,7 @@ export function useHabits() {
     frequency?: HabitFrequency;
     customDays?: number[];
     xpWeight?: XPWeight;
+    categoryId?: string;
   }) => {
     const habit = await createHabit(data);
     await refresh();

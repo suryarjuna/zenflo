@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
+import { CategoryPicker } from '@/components/ui/CategoryPicker';
 import { useHabits } from '@/hooks/useHabits';
 import { useGoals } from '@/hooks/useGoals';
-import type { HabitFrequency, XPWeight } from '@/types';
+import { getAllCategories, createCategory } from '@/db/categories';
+import type { HabitFrequency, XPWeight, Category } from '@/types';
 
 const FREQUENCIES: { label: string; value: HabitFrequency }[] = [
   { label: 'Daily', value: 'daily' },
@@ -20,21 +23,28 @@ const WEIGHTS: { value: XPWeight; label: string; xp: string }[] = [
 ];
 
 export default function AddHabitModal() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [title, setTitle] = useState('');
   const [frequency, setFrequency] = useState<HabitFrequency>('daily');
   const [xpWeight, setXpWeight] = useState<XPWeight>(1);
   const [goalId, setGoalId] = useState<string | undefined>();
+  const [categoryId, setCategoryId] = useState<string | undefined>();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const { add } = useHabits();
   const { goals, refresh: refreshGoals } = useGoals();
 
-  useEffect(() => { refreshGoals(); }, []);
+  useEffect(() => {
+    refreshGoals();
+    getAllCategories().then(setCategories);
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim()) return;
     setLoading(true);
     try {
-      await add({ title: title.trim(), frequency, xpWeight, goalId });
+      await add({ title: title.trim(), frequency, xpWeight, goalId, categoryId });
       router.back();
     } catch {
       // silently fail
@@ -102,6 +112,20 @@ export default function AddHabitModal() {
             </View>
           </View>
 
+          <View style={styles.field}>
+            <Text style={styles.label}>Category</Text>
+            <CategoryPicker
+              categories={categories}
+              selectedId={categoryId}
+              onSelect={setCategoryId}
+              onCreateCategory={async (data) => {
+                const cat = await createCategory(data);
+                setCategories(prev => [...prev, cat]);
+                setCategoryId(cat.id);
+              }}
+            />
+          </View>
+
           {goals.length > 0 && (
             <View style={styles.field}>
               <Text style={styles.label}>Link to goal (optional)</Text>
@@ -144,7 +168,7 @@ export default function AddHabitModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background.primary },
   container: { flex: 1, padding: Spacing.xl },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },

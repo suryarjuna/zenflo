@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing, Radius } from '../../constants/theme';
+import { useColors, ThemeColors, Typography, Spacing, Radius } from '../../constants/theme';
 
 interface BadgeProps {
   icon: string;
@@ -10,6 +10,9 @@ interface BadgeProps {
 }
 
 export function Badge({ icon, name, description, unlocked = false }: BadgeProps) {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+
   return (
     <View
       style={[styles.container, !unlocked && styles.locked]}
@@ -24,7 +27,7 @@ export function Badge({ icon, name, description, unlocked = false }: BadgeProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

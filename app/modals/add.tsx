@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 
-const ADD_OPTIONS = [
+const getAddOptions = (Colors: ThemeColors) => [
   {
     key: 'task',
     label: 'Task',
@@ -49,6 +50,10 @@ const ADD_OPTIONS = [
 ];
 
 export default function AddModal() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+  const ADD_OPTIONS = getAddOptions(Colors);
+
   const handleSelect = (route: string) => {
     router.back();
     setTimeout(() => {
@@ -96,7 +101,7 @@ export default function AddModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

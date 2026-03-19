@@ -1,27 +1,39 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { SmartDatePicker } from '@/components/ui/SmartDatePicker';
+import { CategoryPicker } from '@/components/ui/CategoryPicker';
 import { useGoals } from '@/hooks/useGoals';
-import type { Importance } from '@/types';
+import { getAllCategories, createCategory } from '@/db/categories';
+import type { Importance, Category } from '@/types';
 
-const IMPORTANCE_OPTIONS: { value: Importance; label: string; color: string }[] = [
+const getImportanceOptions = (Colors: ThemeColors): { value: Importance; label: string; color: string }[] => [
   { value: 'high', label: 'Critical', color: Colors.danger },
   { value: 'medium', label: 'Important', color: Colors.warning },
   { value: 'low', label: 'Nice to have', color: Colors.text.tertiary },
 ];
 
 export default function AddGoalModal() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
+  const IMPORTANCE_OPTIONS = getImportanceOptions(Colors);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [targetDate, setTargetDate] = useState('');
   const [importance, setImportance] = useState<Importance>('medium');
+  const [categoryId, setCategoryId] = useState<string | undefined>();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { add, goals } = useGoals();
+
+  useEffect(() => {
+    getAllCategories().then(setCategories);
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -36,6 +48,7 @@ export default function AddGoalModal() {
         description: description.trim() || undefined,
         targetDate: targetDate || undefined,
         importance,
+        categoryId,
       });
       router.back();
     } catch (e) {
@@ -111,6 +124,20 @@ export default function AddGoalModal() {
             </View>
           </View>
 
+          <View style={styles.field}>
+            <Text style={styles.label}>Category</Text>
+            <CategoryPicker
+              categories={categories}
+              selectedId={categoryId}
+              onSelect={setCategoryId}
+              onCreateCategory={async (data) => {
+                const cat = await createCategory(data);
+                setCategories(prev => [...prev, cat]);
+                setCategoryId(cat.id);
+              }}
+            />
+          </View>
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
@@ -127,7 +154,7 @@ export default function AddGoalModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

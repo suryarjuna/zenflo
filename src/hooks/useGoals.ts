@@ -16,7 +16,7 @@ export function useGoals() {
     setGoals(g);
   }, [setGoals]);
 
-  const add = useCallback(async (data: { title: string; description?: string; targetDate?: string; importance?: 'high' | 'medium' | 'low' }) => {
+  const add = useCallback(async (data: { title: string; description?: string; targetDate?: string; importance?: 'high' | 'medium' | 'low'; categoryId?: string }) => {
     const goal = await createGoal(data);
     await refresh();
     return goal;

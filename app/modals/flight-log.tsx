@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StreakFlame } from '@/components/ui/StreakFlame';
@@ -15,22 +16,25 @@ import { useAppStore } from '@/store/useAppStore';
 type FlightLogData = Awaited<ReturnType<ReturnType<typeof useFlightLog>['getData']>>;
 
 function ProgressDots({ current, total }: { current: number; total: number }) {
+  const Colors = useColors();
+  const dStyles = createDotStyles(Colors);
   return (
-    <View style={dotStyles.container}>
+    <View style={dStyles.container}>
       {Array.from({ length: total }).map((_, i) => (
-        <View key={i} style={[dotStyles.dot, i === current && dotStyles.active]} />
+        <View key={i} style={[dStyles.dot, i === current && dStyles.active]} />
       ))}
     </View>
   );
 }
 
-const dotStyles = StyleSheet.create({
+const createDotStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flexDirection: 'row', gap: Spacing.sm, justifyContent: 'center', paddingVertical: Spacing.lg },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.background.tertiary },
   active: { backgroundColor: Colors.pilot.primary, width: 24 },
 });
 
 export default function FlightLogModal() {
+  const Colors = useColors();
   const [screen, setScreen] = useState(0);
   const [data, setData] = useState<FlightLogData | null>(null);
   const [bestMoment, setBestMoment] = useState('');
@@ -88,6 +92,8 @@ export default function FlightLogModal() {
       setSubmitting(false);
     }
   };
+
+  const styles = createStyles(Colors);
 
   if (!data) {
     return (
@@ -245,7 +251,7 @@ export default function FlightLogModal() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.pilot.background },
   container: { flex: 1 },
   topBar: { flexDirection: 'row', justifyContent: 'flex-end', padding: Spacing.lg },

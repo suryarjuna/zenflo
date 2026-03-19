@@ -6,6 +6,14 @@ export type TaskStatus    = 'pending' | 'completed' | 'cancelled';
 export type HabitFrequency = 'daily' | 'weekdays' | 'custom';
 export type Importance = 'high' | 'medium' | 'low';
 
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  createdAt: string;
+}
+
 export interface Goal {
   id: string;
   title: string;
@@ -13,6 +21,7 @@ export interface Goal {
   importance: Importance;
   targetDate?: string;
   status: GoalStatus;
+  categoryId?: string;
   createdAt: string;
   completedAt?: string;
 }
@@ -28,6 +37,7 @@ export interface Habit {
   longestStreak: number;
   freezeTokens: number;
   lastCompletedDate?: string;
+  categoryId?: string;
   createdAt: string;
   archivedAt?: string;
 }
@@ -53,6 +63,7 @@ export interface Task {
   calendarEventId?: string;
   isEvent: boolean;
   eventType?: string;
+  categoryId?: string;
   createdAt: string;
   completedAt?: string;
 }

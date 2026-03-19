@@ -5,10 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { useColors, Typography, Spacing, Radius } from '@/constants/theme';
+import type { ThemeColors } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 
 function ProgressDots({ current, total }: { current: number; total: number }) {
+  const Colors = useColors();
+  const dotStyles = createDotStyles(Colors);
   return (
     <View style={dotStyles.container}>
       {Array.from({ length: total }).map((_, i) => (
@@ -21,13 +24,15 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
   );
 }
 
-const dotStyles = StyleSheet.create({
+const createDotStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flexDirection: 'row', gap: Spacing.sm, justifyContent: 'center', paddingVertical: Spacing.lg },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.background.tertiary },
   active: { backgroundColor: Colors.accent, width: 24 },
 });
 
 export default function WelcomeScreen() {
+  const Colors = useColors();
+  const styles = createStyles(Colors);
   const [name, setName] = useState('');
   const wordmarkOpacity = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
@@ -108,7 +113,7 @@ export default function WelcomeScreen() {
 
 export { ProgressDots };
 
-const styles = StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background.primary,

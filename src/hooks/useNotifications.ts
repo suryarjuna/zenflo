@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -16,7 +16,9 @@ const NOTIFICATION_KEYS = {
   morningEnabled: 'zenflo_notif_morning',
   streakEnabled: 'zenflo_notif_streak',
   flightLogEnabled: 'zenflo_notif_flight_log',
-  morningTime: 'zenflo_notif_morning_time',
+  morningHour: 'zenflo_notif_morning_hour',
+  streakHour: 'zenflo_notif_streak_hour',
+  flightLogHour: 'zenflo_notif_flight_log_hour',
 };
 
 export function useNotifications() {
@@ -25,14 +27,27 @@ export function useNotifications() {
     return status === 'granted';
   }, []);
 
+  const getNotificationTimes = useCallback(async () => {
+    const [mh, sh, fh] = await Promise.all([
+      AsyncStorage.getItem(NOTIFICATION_KEYS.morningHour),
+      AsyncStorage.getItem(NOTIFICATION_KEYS.streakHour),
+      AsyncStorage.getItem(NOTIFICATION_KEYS.flightLogHour),
+    ]);
+    return {
+      morningHour: mh ? parseInt(mh, 10) : 8,
+      streakHour: sh ? parseInt(sh, 10) : 21,
+      flightLogHour: fh ? parseInt(fh, 10) : 9,
+    };
+  }, []);
+
   const scheduleAll = useCallback(async () => {
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const morningEnabled = await AsyncStorage.getItem(NOTIFICATION_KEYS.morningEnabled);
     const streakEnabled = await AsyncStorage.getItem(NOTIFICATION_KEYS.streakEnabled);
     const flightLogEnabled = await AsyncStorage.getItem(NOTIFICATION_KEYS.flightLogEnabled);
+    const times = await getNotificationTimes();
 
-    // Morning ritual - daily 8:00am
     if (morningEnabled !== 'false') {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -41,13 +56,12 @@ export function useNotifications() {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: 8,
+          hour: times.morningHour,
           minute: 0,
         },
       });
     }
 
-    // Streak at risk - daily 9:00pm
     if (streakEnabled !== 'false') {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -56,13 +70,12 @@ export function useNotifications() {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: 21,
+          hour: times.streakHour,
           minute: 0,
         },
       });
     }
 
-    // Flight Log ready - every Sunday 9:00am
     if (flightLogEnabled !== 'false') {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -71,17 +84,30 @@ export function useNotifications() {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday: 1, // Sunday
-          hour: 9,
+          weekday: 1,
+          hour: times.flightLogHour,
           minute: 0,
         },
       });
     }
-  }, []);
+  }, [getNotificationTimes]);
 
   const toggleNotification = useCallback(async (key: string, enabled: boolean) => {
     await AsyncStorage.setItem(key, enabled ? 'true' : 'false');
     await scheduleAll();
+  }, [scheduleAll]);
+
+  const setNotificationTime = useCallback(async (which: string, hour: number) => {
+    const keyMap: Record<string, string> = {
+      morning: NOTIFICATION_KEYS.morningHour,
+      streak: NOTIFICATION_KEYS.streakHour,
+      flightLog: NOTIFICATION_KEYS.flightLogHour,
+    };
+    const key = keyMap[which];
+    if (key) {
+      await AsyncStorage.setItem(key, String(hour));
+      await scheduleAll();
+    }
   }, [scheduleAll]);
 
   const getSettings = useCallback(async () => {
@@ -99,7 +125,9 @@ export function useNotifications() {
     requestPermissions,
     scheduleAll,
     toggleNotification,
+    setNotificationTime,
     getSettings,
+    getNotificationTimes,
     NOTIFICATION_KEYS,
   };
 }
