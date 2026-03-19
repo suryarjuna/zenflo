@@ -1,22 +1,30 @@
-# Zenflo
+<p align="center">
+  <img src="docs/social-preview.png" alt="zenflo — get in the zone. own your week." width="100%">
+</p>
 
-A free, offline-first productivity app that helps you build habits, crush goals, stay focused, and level up — all in one beautiful dark-mode interface.
+# zenflo
 
-No subscriptions. No ads. No data leaves your device.
+A free, offline-first productivity app that helps you build habits, crush tasks, and track your growth — without selling your data.
+
+No subscriptions. No ads. No accounts. Your data never leaves your device.
 
 ## Features
 
 - **Unified Dashboard** — Habits, goals, tasks, focus sessions, streaks, and timeline in one scroll
 - **Habit Tracking** — Daily habits with streak tracking, freeze tokens, and completion rates
 - **Goal Cockpit** — Goals with importance levels, target dates, and visual progress bars
-- **Focus Sessions** — Timed deep work sessions that earn XP
+- **Focus Sessions** — 20/30/60 min presets + custom duration, with XP rewards
+- **Categories** — Organize everything by Work, Health, Personal, Hobby, or custom categories
 - **XP & Leveling** — Earn XP from everything you do. Level up across 8 tiers from Initiate to Zenmaster
-- **14 Badges** — Unlock achievements as you grow
+- **12 Badges** — Unlock achievements as you grow
 - **Weekly Flight Log** — Sunday reflection with habit score, tasks completed, and personal notes
-- **Analytics Dashboard** — Weekly XP charts, XP by source, 30-day habit performance, milestones
+- **Analytics Dashboard** — Weekly XP charts, XP by source, time by category, 30-day habit performance
+- **iOS Widgets** — Small and medium home screen widgets with deep linking
+- **Light & Dark Themes** — Warm orange light mode and zen dark mode
 - **Calendar Sync** — Apple Calendar, Google Calendar, or both
-- **Smart Notifications** — Morning ritual, streak-at-risk, and flight log reminders
-- **Profile** — Edit your name, view badges, manage calendar and notification preferences
+- **Smart Notifications** — Morning ritual, streak-at-risk, and flight log reminders with custom times
+- **Achievements Screen** — Badges and streak freeze tokens in a dedicated view
+- **100% Offline** — Zero data collection, no servers, no analytics
 
 ## Tech Stack
 
@@ -55,7 +63,12 @@ src/
   types/                    # TypeScript type definitions
   utils/                    # Date helpers, streak calculations, XP utilities
 docs/
-  privacy-policy.html       # Privacy policy page for App Store
+  index.html                # Landing page
+  privacy-policy.html       # Privacy policy
+modules/
+  widget-sync/              # Expo module for iOS widget data sharing
+targets/
+  widget/                   # iOS WidgetKit extension (SwiftUI)
 ```
 
 ## Getting Started
@@ -106,7 +119,7 @@ eas submit --platform ios
 
 ## Database
 
-Zenflo uses SQLite with 9 tables:
+zenflo uses SQLite with 10 tables:
 
 | Table | Purpose |
 |-------|---------|
@@ -119,6 +132,7 @@ Zenflo uses SQLite with 9 tables:
 | `flight_logs` | Weekly review entries |
 | `xp_events` | XP transaction log (source, amount, timestamp) |
 | `badges` | Unlocked badge records |
+| `categories` | User-defined categories with colors |
 
 All data is stored locally. No network requests are made.
 
@@ -148,7 +162,7 @@ All data is stored locally. No network requests are made.
 
 ## Privacy
 
-Zenflo is fully offline. No data is collected, transmitted, or shared. See [Privacy Policy](docs/privacy-policy.html).
+zenflo is fully offline. No data is collected, transmitted, or shared. See [Privacy Policy](docs/privacy-policy.html).
 
 ## License
 
