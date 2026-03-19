@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Zenflo",
+    "name": "zenflo",
     "slug": "zenflo",
     "scheme": "zenflo",
     "version": "1.0.0",
@@ -19,7 +19,7 @@
         ]
       },
       "infoPlist": {
-        "NSCalendarsUsageDescription": "Zenflo needs calendar access to create time blocks for your tasks and events."
+        "NSCalendarsUsageDescription": "zenflo needs calendar access to create time blocks for your tasks and events."
       }
     },
     "android": {

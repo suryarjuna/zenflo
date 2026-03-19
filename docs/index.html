@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zenflo — get in the zone. own your week.</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0F0E17;
+      color: #F4F3FF;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(32px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+
+    .fade-in.delay-1 { animation-delay: 0.15s; }
+    .fade-in.delay-2 { animation-delay: 0.3s; }
+    .fade-in.delay-3 { animation-delay: 0.45s; }
+    .fade-in.delay-4 { animation-delay: 0.6s; }
+
+    /* Scroll-triggered fade-in using animation-timeline where supported,
+       with a JS-free fallback: elements start visible after a staggered delay. */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Layout ── */
+    section {
+      padding: 100px 24px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .container-wide {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3 {
+      color: #F4F3FF;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: #9B99C5;
+      font-size: 1.125rem;
+      margin-bottom: 16px;
+    }
+
+    a {
+      color: #E8853D;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    strong {
+      color: #F4F3FF;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px;
+      position: relative;
+    }
+
+    .hero-inner {
+      max-width: 720px;
+    }
+
+    .wordmark {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      letter-spacing: 0.3em;
+      color: #E8853D;
+      margin-bottom: 24px;
+      text-transform: lowercase;
+    }
+
+    .tagline {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      font-weight: 600;
+      color: #F4F3FF;
+      margin-bottom: 20px;
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: #9B99C5;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.8;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background-color: #E8853D;
+      color: #0F0E17;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: background-color 0.25s ease, transform 0.2s ease;
+    }
+    .cta-button:hover {
+      background-color: #f09a56;
+      text-decoration: none;
+      transform: translateY(-2px);
+    }
+
+    /* ── Section: Problem ── */
+    .problem {
+      background-color: #0F0E17;
+    }
+    .problem .container {
+      max-width: 680px;
+    }
+    .problem p {
+      font-size: 1.25rem;
+      line-height: 1.9;
+    }
+
+    /* ── Section: Principle ── */
+    .principle {
+      background-color: #13121F;
+    }
+
+    .modes-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      margin-top: 40px;
+    }
+
+    @media (min-width: 640px) {
+      .modes-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .mode-card {
+      background-color: #1A1929;
+      border-radius: 16px;
+      padding: 32px 28px;
+      border: 1px solid rgba(232, 133, 61, 0.08);
+      transition: border-color 0.3s ease;
+    }
+    .mode-card:hover {
+      border-color: rgba(232, 133, 61, 0.25);
+    }
+
+    .mode-card h3 {
+      font-size: 1.125rem;
+      margin-bottom: 10px;
+      color: #E8853D;
+    }
+
+    .mode-card p {
+      font-size: 0.975rem;
+      color: #9B99C5;
+      margin-bottom: 0;
+    }
+
+    /* ── Section: Features ── */
+    .features {
+      background-color: #0F0E17;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 40px;
+    }
+
+    @media (min-width: 540px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 860px) {
+      .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .feature-item {
+      background-color: #1A1929;
+      border-radius: 12px;
+      padding: 24px;
+      font-size: 1rem;
+      color: #9B99C5;
+      line-height: 1.6;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .feature-item strong {
+      display: block;
+      color: #F4F3FF;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Section: Privacy ── */
+    .privacy-section {
+      background-color: #13121F;
+      text-align: center;
+    }
+
+    .privacy-section .container {
+      max-width: 640px;
+    }
+
+    .privacy-quote {
+      font-size: 1.35rem;
+      color: #F4F3FF;
+      font-weight: 500;
+      line-height: 1.8;
+      margin-bottom: 28px;
+      font-style: italic;
+    }
+
+    .privacy-link {
+      font-size: 1rem;
+    }
+
+    /* ── Footer ── */
+    .site-footer {
+      padding: 48px 24px;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .site-footer p {
+      font-size: 0.9rem;
+      color: #5C5A80;
+      margin-bottom: 8px;
+    }
+
+    .site-footer a {
+      font-size: 0.9rem;
+    }
+
+    /* ── Divider ── */
+    .section-divider {
+      width: 48px;
+      height: 3px;
+      background-color: #E8853D;
+      border: none;
+      border-radius: 2px;
+      margin-bottom: 28px;
+      opacity: 0.6;
+    }
+
+    .text-center { text-align: center; }
+    .text-center .section-divider { margin-left: auto; margin-right: auto; }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════ Hero ════════════════════ -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1 class="wordmark fade-in">zenflo</h1>
+      <p class="tagline fade-in delay-1">get in the zone. own your week.</p>
+      <p class="subtitle fade-in delay-2">A free, offline-first productivity app that helps you build habits, crush tasks, and track your growth — without selling your data.</p>
+      <a href="#" class="cta-button fade-in delay-3">Download on the App Store</a>
+    </div>
+  </section>
+
+  <!-- ════════════════════ Problem ════════════════════ -->
+  <section class="problem">
+    <div class="container reveal">
+      <hr class="section-divider">
+      <h2>The Problem</h2>
+      <p>We live in an age of infinite distractions. Productivity apps promise to help, but most of them track you, lock features behind paywalls, and require accounts. Your personal growth data shouldn't live on someone else's server.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════ Principle ════════════════════ -->
+  <section class="principle">
+    <div class="container-wide reveal">
+      <hr class="section-divider">
+      <h2>The Principle</h2>
+      <p>zenflo is built on the idea that <strong>intentional living compounds</strong>. Small, consistent actions — a daily habit, a focused session, a weekly review — stack up over time into transformative results. We call this the "flow state of life."</p>
+      <p>The three modes represent three dimensions of intentional living:</p>
+      <div class="modes-grid">
+        <div class="mode-card reveal">
+          <h3>Monk Mode</h3>
+          <p>Deep focus. Silence the noise. Do the work that matters.</p>
+        </div>
+        <div class="mode-card reveal">
+          <h3>Athlete Mode</h3>
+          <p>Streak discipline. Show up every day. Build the chain.</p>
+        </div>
+        <div class="mode-card reveal">
+          <h3>Pilot Mode</h3>
+          <p>Weekly reviews. Course-correct. See the big picture.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════ Features ════════════════════ -->
+  <section class="features">
+    <div class="container-wide reveal">
+      <div class="text-center">
+        <hr class="section-divider">
+        <h2>Everything you need. Nothing you don't.</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-item">
+          <strong>Habit Streaks</strong>
+          Track daily habits with streak counting and freeze tokens to protect your progress.
+        </div>
+        <div class="feature-item">
+          <strong>Smart Tasks</strong>
+          Priorities, categories, and calendar sync to keep your days structured.
+        </div>
+        <div class="feature-item">
+          <strong>Connected Goals</strong>
+          Link habits and tasks to bigger goals so every action has purpose.
+        </div>
+        <div class="feature-item">
+          <strong>Focus Sessions</strong>
+          Timed deep work (20/30/60 min + custom) with XP rewards for showing up.
+        </div>
+        <div class="feature-item">
+          <strong>Categories</strong>
+          Organize with Work, Health, Personal, Hobby — or create your own.
+        </div>
+        <div class="feature-item">
+          <strong>Weekly Flight Log</strong>
+          Reflect on your week. Celebrate wins. Plan what's next.
+        </div>
+        <div class="feature-item">
+          <strong>XP &amp; Leveling</strong>
+          Earn experience, level up, and unlock badges as you build consistency.
+        </div>
+        <div class="feature-item">
+          <strong>iOS Widgets</strong>
+          Glance at your habits and progress right from your home screen.
+        </div>
+        <div class="feature-item">
+          <strong>Light &amp; Dark Themes</strong>
+          Switch between light and dark to match your mood and environment.
+        </div>
+        <div class="feature-item">
+          <strong>100% Offline</strong>
+          No internet required. No data collection. Ever.
+        </div>
+        <div class="feature-item">
+          <strong>Free Forever</strong>
+          No ads. No accounts. No subscriptions. No paywalls.
+        </div>
+        <div class="feature-item">
+          <strong>Your Data, Your Device</strong>
+          Everything is stored locally. Export or delete anytime.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════ Privacy ════════════════════ -->
+  <section class="privacy-section">
+    <div class="container reveal">
+      <hr class="section-divider">
+      <h2>Privacy First</h2>
+      <p class="privacy-quote">"Your data never leaves your device. No accounts. No analytics. No servers. Just you and your goals."</p>
+      <a href="privacy-policy.html" class="privacy-link">Read our Privacy Policy</a>
+    </div>
+  </section>
+
+  <!-- ════════════════════ Footer ════════════════════ -->
+  <footer class="site-footer">
+    <p><strong style="color:#9B99C5;">zenflo</strong> is and will always be free.</p>
+    <p><a href="privacy-policy.html">Privacy Policy</a></p>
+    <p style="margin-top: 16px;">Made with intention.</p>
+  </footer>
+
+  <!-- ── Scroll reveal (minimal, no dependencies) ── -->
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) {
+        // Fallback: just show everything
+        els.forEach(function (el) { el.classList.add('visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      els.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>

@@ -71,7 +71,7 @@ export default function WelcomeScreen() {
         <View style={styles.center}>
           <Animated.View style={[styles.logoRow, wordmarkStyle]}>
             <Image source={require('../../assets/icon.png')} style={styles.logo} />
-            <Text style={styles.wordmark}>ZENFLO</Text>
+            <Text style={styles.wordmark}>zenflo</Text>
           </Animated.View>
           <Animated.Text style={[styles.tagline, taglineStyle]}>
             Get in the zone. Own your week.

@@ -158,7 +158,7 @@ struct SmallWidgetView: View {
             Image(systemName: "leaf.fill")
                 .font(.system(size: 24))
                 .foregroundColor(ZenfloColors.accent)
-            Text("Open Zenflo")
+            Text("Open zenflo")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(ZenfloColors.textSecondary)
             Text("to sync data")
@@ -290,7 +290,7 @@ struct MediumWidgetView: View {
                 .font(.system(size: 28))
                 .foregroundColor(ZenfloColors.accent)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Welcome to Zenflo")
+                Text("Welcome to zenflo")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundColor(ZenfloColors.textPrimary)
                 Text("Open the app to sync your tasks & habits")
@@ -320,7 +320,7 @@ struct ZenfloWidget: Widget {
                 }
             }
         }
-        .configurationDisplayName("Zenflo")
+        .configurationDisplayName("zenflo")
         .description("Track your pending tasks and today's habits.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }

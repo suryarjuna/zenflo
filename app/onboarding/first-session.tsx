@@ -187,7 +187,7 @@ export default function FirstSessionScreen() {
         {state === 'ready' && (
           <>
             <View style={styles.center}>
-              <Text style={styles.heading}>Welcome to Zenflo.</Text>
+              <Text style={styles.heading}>Welcome to zenflo.</Text>
               <Text style={styles.subtitle}>Start with 5 minutes of focus.</Text>
               <View style={styles.timerPreview}>
                 <ProgressRing size={200} progress={0} color={Colors.monk.primary}>
@@ -226,7 +226,7 @@ export default function FirstSessionScreen() {
               Your goal and habits are saved. Let's go.
             </Text>
             <Button
-              label="Enter Zenflo"
+              label="Enter zenflo"
               onPress={() => router.replace('/(home)')}
               style={{ marginTop: Spacing['2xl'] }}
             />

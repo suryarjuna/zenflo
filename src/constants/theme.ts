@@ -1,4 +1,4 @@
-// Zenflo Design System
+// zenflo Design System
 // Supports dark (default) and light (orange) themes
 
 import { create } from 'zustand';

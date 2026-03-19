@@ -66,7 +66,7 @@ export default function AddTaskModal() {
             title: title.trim(),
             startDate,
             endDate,
-            notes: `Zenflo task: ${priority} priority`,
+            notes: `zenflo task: ${priority} priority`,
           });
         }
       }

@@ -3,7 +3,7 @@ import * as Calendar from 'expo-calendar';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ZENFLO_CALENDAR_TITLE = 'Zenflo';
+const ZENFLO_CALENDAR_TITLE = 'zenflo';
 const CALENDAR_PREF_KEY = 'zenflo_calendar_provider';
 
 export type CalendarProvider = 'apple' | 'google' | 'both' | 'none';

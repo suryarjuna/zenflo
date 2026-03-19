@@ -251,8 +251,8 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
           <Card>
-            <Text style={styles.aboutText}>Zenflo v1.0.0</Text>
-            <Text style={styles.aboutSubtext}>Zenflo is and will always be free.</Text>
+            <Text style={styles.aboutText}>zenflo v1.0.0</Text>
+            <Text style={styles.aboutSubtext}>zenflo is and will always be free.</Text>
           </Card>
         </View>
 

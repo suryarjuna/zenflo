@@ -169,7 +169,7 @@ export default function FlightLogModal() {
       <Text style={styles.screenTitle}>Streak Report</Text>
       <View style={styles.overallStreak}>
         <StreakFlame count={stats?.overallStreak ?? 0} size="lg" />
-        <Text style={styles.overallStreakLabel}>Overall Zenflo streak</Text>
+        <Text style={styles.overallStreakLabel}>Overall zenflo streak</Text>
       </View>
       <View style={styles.streakList}>
         {data.activeStreaks.map(s => (

@@ -2,7 +2,7 @@
 module.exports = (config) => ({
   type: "widget",
   name: "ZenfloWidget",
-  displayName: "Zenflo",
+  displayName: "zenflo",
   deploymentTarget: "17.0",
   frameworks: ["SwiftUI", "WidgetKit"],
   colors: {

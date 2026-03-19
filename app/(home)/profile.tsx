@@ -200,7 +200,7 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <TouchableOpacity onPress={() => setEditingName(true)} style={styles.nameRow} accessibilityLabel="Edit name">
-              <Text style={styles.userName}>{stats?.userName ?? 'Zenflo User'}</Text>
+              <Text style={styles.userName}>{stats?.userName ?? 'zenflo User'}</Text>
               <Ionicons name="pencil" size={14} color={Colors.text.tertiary} />
             </TouchableOpacity>
           )}
@@ -343,7 +343,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footerVersion}>Zenflo v1.0.0 — Free forever</Text>
+        <Text style={styles.footerVersion}>zenflo v1.0.0 — Free forever</Text>
       </ScrollView>
     </SafeAreaView>
   );

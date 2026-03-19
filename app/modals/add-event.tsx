@@ -45,7 +45,7 @@ export default function AddEventModal() {
           title: title.trim(),
           startDate,
           endDate,
-          notes: `Zenflo event: ${eventType}`,
+          notes: `zenflo event: ${eventType}`,
         });
       }
 

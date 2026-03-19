@@ -61,7 +61,7 @@ export default function XPWeightsScreen() {
       <View style={styles.container}>
         <View style={styles.top}>
           <Text style={styles.heading}>Not all habits are equal.</Text>
-          <Text style={styles.subtitle}>Tell Zenflo which ones matter most.</Text>
+          <Text style={styles.subtitle}>Tell zenflo which ones matter most.</Text>
 
           <View style={styles.habitList}>
             {habits.map((habit, index) => (
